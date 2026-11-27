@@ -1,0 +1,29 @@
+﻿image: node:20
+
+stages:
+  - install
+  - test
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+install_dependencies:
+  stage: install
+  script:
+    - npm ci || npm install
+
+run_api_tests:
+  stage: test
+  script:
+    - npm test
+
+deploy_application:
+  stage: deploy
+  script:
+    - echo "Deploying OCR Document Processing System..."
+    - node -c server.js
+    - echo "Deployment check completed successfully."
+  only:
+    - main
