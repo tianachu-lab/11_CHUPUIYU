@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test --test-force-exit api.test.js"
+    "test": "node --test api.test.js"
   },
   "keywords": [],
   "author": "",

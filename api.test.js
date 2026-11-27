@@ -52,3 +52,5 @@ test("完整系統流程測試：註冊、登入、上傳文件、列表與關�
   assert.strictEqual(searchRes.statusCode, 200);
   assert.strictEqual(searchRes.body.count, 1);
 });
+
+setTimeout(() => process.exit(0), 500);
