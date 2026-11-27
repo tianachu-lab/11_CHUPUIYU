@@ -204,3 +204,37 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
+app.delete("/documents/:id", authMiddleware, (req, res) => {
+  const docId = Number(req.params.id);
+  if (!Number.isInteger(docId) || docId <= 0) {
+    return res.status(400).json({ error: "無效的文件編號" });
+  }
+
+  // 先查詢該筆文件是否屬於目前登入的使用者
+  db.get(
+    "SELECT id, stored_name FROM documents WHERE id = ? AND user_id = ?",
+    [docId, req.user.id],
+    (err, doc) => {
+      if (err) return res.status(500).json({ error: "查詢文件失敗" });
+      if (!doc) return res.status(404).json({ error: "找不到該筆文件或無權限刪除" });
+
+      // 刪除資料庫紀錄
+      db.run(
+        "DELETE FROM documents WHERE id = ? AND user_id = ?",
+        [docId, req.user.id],
+        function (delErr) {
+          if (delErr) return res.status(500).json({ error: "刪除文件失敗" });
+
+          // 同步刪除 uploads 資料夾內的實體圖片檔
+          const filePath = path.join(__dirname, "uploads", doc.stored_name);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+
+          res.json({ message: "已刪除該筆辨識紀錄", deletedId: docId });
+        }
+      );
+    }
+  );
+});

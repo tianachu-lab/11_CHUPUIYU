@@ -49,6 +49,12 @@
     }
     button.secondary { background: #4b5563; }
     button.danger { background: #dc2626; }
+    button.del-btn {
+      background: #dc2626;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     .status {
       margin-top: 8px;
@@ -94,7 +100,6 @@
   <div class="container">
     <h1>人工智能文件處理系統 (OCR)</h1>
 
-    <!-- 會員登入／註冊區塊 -->
     <div id="authCard" class="card">
       <h2>會員登入 / 註冊</h2>
       <div class="row">
@@ -108,14 +113,12 @@
       <div id="authMsg" class="status"></div>
     </div>
 
-    <!-- 登入後功能區 -->
     <div id="appArea" class="hidden">
       <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <span>目前登入會員：<strong id="currentUser"></strong></span>
         <button class="danger" onclick="logout()">登出</button>
       </div>
 
-      <!-- 上傳相片區 (POST /documents) -->
       <div class="card">
         <h2>1. 上傳含文字相片並進行 OCR 辨識</h2>
         <div class="row">
@@ -125,7 +128,6 @@
         <div id="uploadMsg" class="status"></div>
       </div>
 
-      <!-- 搜尋與列表區 (GET /documents & GET /documents?query=...) -->
       <div class="card">
         <h2>2. 搜尋文件文字與相片列表</h2>
         <div class="row">
@@ -216,7 +218,7 @@
       formData.append("image", fileInput.files[0]);
 
       btn.disabled = true;
-      msg.textContent = "正在上傳並執行機器學習 OCR 文字辨識（首次執行需下載語言模型，請稍候）...";
+      msg.textContent = "正在上傳並執行 OCR 文字辨識，請稍候...";
 
       try {
         const res = await fetch("/documents", {
@@ -236,6 +238,24 @@
         msg.textContent = "連線發生錯誤";
       } finally {
         btn.disabled = false;
+      }
+    }
+
+    async function deleteDocument(docId) {
+      if (!confirm("確定要刪除這筆辨識紀錄與相片嗎？")) return;
+
+      const listMsg = document.getElementById("listMsg");
+      const res = await fetch(`/documents/${docId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        listMsg.textContent = "已成功刪除該筆紀錄";
+        loadAllDocuments();
+      } else {
+        listMsg.textContent = data.error || "刪除失敗";
       }
     }
 
@@ -284,8 +304,14 @@
         const pre = document.createElement("pre");
         pre.textContent = doc.extracted_text || "（未辨識出文字）";
 
+        const delBtn = document.createElement("button");
+        delBtn.className = "del-btn";
+        delBtn.textContent = "刪除";
+        delBtn.onclick = () => deleteDocument(doc.id);
+
         content.appendChild(title);
         content.appendChild(pre);
+        content.appendChild(delBtn);
         item.appendChild(img);
         item.appendChild(content);
         container.appendChild(item);
